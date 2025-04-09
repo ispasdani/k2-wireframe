@@ -9,7 +9,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   useSidebar,
-} from "../../ui/sidebar";
+} from "../ui/sidebar";
 import SidebarItemsMenu from "./sidebarItemsMenu";
 import Logo from "@/svgs/logo";
 import Link from "next/link";
