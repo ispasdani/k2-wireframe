@@ -5,8 +5,30 @@ import Image from "next/image";
 import React, { ChangeEvent, useState } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ImageUpload = () => {
+  const AIModelList = [
+    {
+      name: "Gemini Google",
+      icon: "/icons/google.png",
+    },
+    {
+      name: "llama By Meta",
+      icon: "/icons/meta.png",
+    },
+    {
+      name: "Deepseek",
+      icon: "/icons/deepseek.png",
+    },
+  ];
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const onImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -27,9 +49,9 @@ const ImageUpload = () => {
 
             <p className="text-gray-400 mt-3">Select Wireframe Image</p>
 
-            <div className="p-5 border border-dashed w-full flex items-center justify-center mt-7">
+            <div className="p-5 border border-dashed w-full h-full flex items-center justify-center mt-7 rounded-md">
               <label htmlFor="imageSelect">
-                <p className="p-2 bg-primary text-white rounded-md px-5 cursor-pointer">
+                <p className="py-2 bg-primary text-white rounded-md px-5 cursor-pointer">
                   Select Image
                 </p>
               </label>
@@ -58,7 +80,27 @@ const ImageUpload = () => {
           </div>
         )}
         <div className="p-7 border border-dashed shadow-md rounded-md">
-          <p className="font-bold text-lg">
+          <p className="font-bold text-lg">Select AI Model</p>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select AI Model" />
+            </SelectTrigger>
+            <SelectContent>
+              {AIModelList.map((model) => (
+                <SelectItem key={model.name} value={model.name}>
+                  <Image
+                    src={model.icon}
+                    alt={model.name}
+                    width={18}
+                    height={18}
+                  />
+                  {model.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <p className="font-bold text-lg mt-7">
             Enter description about your desired code
           </p>
           <Textarea
@@ -69,7 +111,7 @@ const ImageUpload = () => {
       </div>
 
       <div className="mt-7 flex items-center justify-center w-full">
-        <Button className="w-full cursor-pointer">
+        <Button className="w-full cursor-pointer py-5">
           <WandSparkles /> Convert To Code
         </Button>
       </div>
