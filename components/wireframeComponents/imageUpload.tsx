@@ -40,8 +40,8 @@ const ImageUpload = () => {
   };
 
   return (
-    <div className="mt-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+    <div className="mt-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {!previewUrl ? (
           <div className="p-7 border border-dashed rounded-md shadow-md flex flex-col justify-center items-center">
             <CloudUpload className="h-10 w-10" />
