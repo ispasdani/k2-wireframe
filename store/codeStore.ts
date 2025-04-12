@@ -5,6 +5,7 @@ interface CodeData {
   description: string;
   generatedCode: string;
   selectedModel: string;
+  selectedModelIcon: string; // NEW FIELD for storing the icon path
 }
 
 interface CodeStore {
@@ -18,6 +19,7 @@ export const useCodeStore = create<CodeStore>((set) => ({
     description: "",
     generatedCode: "",
     selectedModel: "",
+    selectedModelIcon: "",
   },
   setCodeData: (newData) =>
     set((state) => ({

@@ -36,18 +36,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
 
   const { user } = useUser();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [description, setDescription] = useState<string>("");
   const setCodeData = useCodeStore((state) => state.setCodeData);
   const codeData = useCodeStore((state) => state.codeData);
   const generateCodeWithGemini = useAction(
     api.generatedWithGoogleGemini.generateCodeWithGemini
   );
 
-  // Update selected model both locally and in the store
+  // Update the selected model in the store along with its icon path
   const handleModelChange = (modelValue: string) => {
-    setSelectedModel(modelValue);
-    setCodeData({ selectedModel: modelValue });
+    const selectedModelData = AIModelList.find(
+      (model) => model.name === modelValue
+    );
+    setCodeData({
+      selectedModel: modelValue,
+      selectedModelIcon: selectedModelData?.icon || "",
+    });
   };
 
   const onImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
@@ -56,15 +59,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
       const imageUrl = URL.createObjectURL(files[0]);
       setPreviewUrl(imageUrl);
 
-      // Convert image to base64 and update the store (keeping the current description)
+      // Convert image to base64 and update the store while preserving the current description
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result?.toString().split(",")[1] || "";
         setCodeData({
           imageBase64: base64,
-          description,
-          generatedCode: "", // reset generated code if present
-          // selectedModel is updated by handleModelChange
+          // Keep existing description and reset generatedCode for a new generation
+          description: codeData.description,
+          generatedCode: "",
         });
       };
       reader.readAsDataURL(files[0]);
@@ -72,25 +75,29 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
   };
 
   const handleGenerateCode = async () => {
-    if ((!previewUrl && !codeData.imageBase64) || !selectedModel || !user)
+    if (
+      (!previewUrl && !codeData.imageBase64) ||
+      !codeData.selectedModel ||
+      !user
+    )
       return;
 
-    if (selectedModel === "Gemini Google") {
+    if (codeData.selectedModel === "Gemini Google") {
       try {
-        const { imageBase64, description: storedDescription } =
-          useCodeStore.getState().codeData;
+        const { imageBase64, description } = useCodeStore.getState().codeData;
         const userId = user.id;
         const generatedCode = await generateCodeWithGemini({
           imageBase64,
-          description: storedDescription || undefined,
+          description: description || undefined,
           userId,
         });
-        // Update the store with the newly generated code and selected model
+        // Update the store with the new generated code; other values remain unchanged.
         setCodeData({
           imageBase64,
-          description: storedDescription,
+          description,
           generatedCode,
-          selectedModel,
+          selectedModel: codeData.selectedModel,
+          selectedModelIcon: codeData.selectedModelIcon,
         });
         // Switch the active tab to "reviewResult" after code generation succeeds.
         onGenerateSuccess();
@@ -108,8 +115,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
       description: "",
       generatedCode: "",
       selectedModel: "",
+      selectedModelIcon: "",
     });
-    setSelectedModel(null);
   };
 
   if (!user) {
@@ -118,29 +125,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
 
   return (
     <div className="mt-3">
-      {/* Display generated data if available */}
-      {(codeData.imageBase64 || codeData.generatedCode) && (
-        <div className="mb-5 p-5 border rounded-md shadow-md">
-          <h3 className="font-bold text-lg mb-3">Generated Data</h3>
-          <div className="flex flex-col items-center">
-            <Image
-              src={`data:image/*;base64,${codeData.imageBase64}`}
-              alt="Generated Preview"
-              width={500}
-              height={500}
-              className="w-full h-[300px] object-contain"
-            />
-            <p className="mt-3">
-              <strong>Description:</strong> {codeData.description || "N/A"}
-            </p>
-            <p className="mt-1">
-              <strong>Selected Model:</strong> {codeData.selectedModel || "N/A"}
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Image Upload Panel */}
         {!previewUrl && !codeData.imageBase64 ? (
           <div className="p-7 border border-dashed rounded-md shadow-md flex flex-col justify-center items-center">
             <CloudUpload className="h-10 w-10" />
@@ -162,8 +148,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
             />
           </div>
         ) : (
-          <div className="p-5 border border-dashed rounded-md relative">
-            {/* Use local previewUrl if available; otherwise show image from the store */}
+          <div className="p-5 border border-dashed rounded-md shadow-md relative">
+            {/*
+              Use the local previewUrl if available; otherwise show
+              the uploaded image from the store (converted from base64)
+            */}
             {previewUrl ? (
               <Image
                 src={previewUrl}
@@ -187,11 +176,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
             />
           </div>
         )}
+
+        {/* Controls Panel */}
         <div className="p-7 border border-dashed shadow-md rounded-md">
           <p className="font-bold text-lg">Select AI Model</p>
-          <Select onValueChange={handleModelChange}>
+          <Select
+            onValueChange={handleModelChange}
+            defaultValue={codeData.selectedModel || ""}
+          >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select AI Model" />
+              <SelectValue placeholder="Select AI Model">
+                {codeData.selectedModel || "Select AI Model"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {AIModelList.map((model) => (
@@ -217,16 +213,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
           <Textarea
             className="mt-3 h-[200px]"
             placeholder="Write about your code"
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
+            value={codeData.description}
+            onChange={(e) =>
               setCodeData({
-                imageBase64: codeData.imageBase64,
                 description: e.target.value,
+                imageBase64: codeData.imageBase64,
                 generatedCode: codeData.generatedCode,
-                selectedModel: selectedModel || "",
-              });
-            }}
+                selectedModel: codeData.selectedModel,
+                selectedModelIcon: codeData.selectedModelIcon,
+              })
+            }
           />
         </div>
       </div>
@@ -236,7 +232,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
           className="w-full cursor-pointer py-5"
           onClick={handleGenerateCode}
           disabled={
-            (!previewUrl && !codeData.imageBase64) || !selectedModel || !user
+            (!previewUrl && !codeData.imageBase64) ||
+            !codeData.selectedModel ||
+            !user
           }
         >
           <WandSparkles className="mr-2" />{" "}
