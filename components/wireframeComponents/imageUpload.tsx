@@ -22,7 +22,12 @@ interface AIModel {
   icon: string;
 }
 
-const ImageUpload: React.FC = () => {
+// Define props to include our callback
+interface ImageUploadProps {
+  onGenerateSuccess: () => void;
+}
+
+const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
   const AIModelList: AIModel[] = [
     { name: "Gemini Google", icon: "/icons/google.png" },
     { name: "llama By Meta", icon: "/icons/meta.png" },
@@ -39,7 +44,7 @@ const ImageUpload: React.FC = () => {
     api.generatedWithGoogleGemini.generateCodeWithGemini
   );
 
-  // Handler to update the selected model both locally and in the store
+  // Update selected model both locally and in the store
   const handleModelChange = (modelValue: string) => {
     setSelectedModel(modelValue);
     setCodeData({ selectedModel: modelValue });
@@ -51,7 +56,7 @@ const ImageUpload: React.FC = () => {
       const imageUrl = URL.createObjectURL(files[0]);
       setPreviewUrl(imageUrl);
 
-      // Convert image to base64 and update the store (keep current description)
+      // Convert image to base64 and update the store (keeping the current description)
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result?.toString().split(",")[1] || "";
@@ -87,6 +92,8 @@ const ImageUpload: React.FC = () => {
           generatedCode,
           selectedModel,
         });
+        // Switch the active tab to "reviewResult" after code generation succeeds.
+        onGenerateSuccess();
       } catch (error) {
         console.error("Error generating code:", error);
       }
