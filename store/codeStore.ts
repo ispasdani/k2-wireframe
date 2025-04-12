@@ -4,6 +4,7 @@ interface CodeData {
   imageBase64: string;
   description: string;
   generatedCode: string;
+  selectedModel: string;
 }
 
 interface CodeStore {
@@ -16,6 +17,7 @@ export const useCodeStore = create<CodeStore>((set) => ({
     imageBase64: "",
     description: "",
     generatedCode: "",
+    selectedModel: "",
   },
   setCodeData: (newData) =>
     set((state) => ({
