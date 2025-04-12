@@ -112,8 +112,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onGenerateSuccess }) => {
     setSelectedModel(null);
   };
 
-  console.log(codeData);
-
   if (!user) {
     return <div>Loading...</div>;
   }
